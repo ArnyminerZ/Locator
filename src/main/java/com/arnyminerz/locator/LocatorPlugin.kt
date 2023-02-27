@@ -105,6 +105,7 @@ class LocatorPlugin: Plugin<Project> {
         }
     }
 
+    @Suppress("UnstableApiUsage")
     private fun CommonExtension<*, *, *, *>.addGeneratedFilesToSourceSet(
         project: Project,
         sourceSetName: String
@@ -119,6 +120,7 @@ class LocatorPlugin: Plugin<Project> {
         }
     }
 
+    @Suppress("UnstableApiUsage")
     private fun CommonExtension<*, *, *, *>.getQualifiedSourceSetsByName(
         sourceSetName: String,
     ): Pair<String, Set<File>> = sourceSets.getByName(sourceSetName).res.let { res ->
