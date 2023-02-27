@@ -25,12 +25,19 @@ class LocatorPlugin: Plugin<Project> {
         androidComponents.finalizeDsl { commonExtension ->
             project.logger.debug("Finalizing DSL...")
             androidComponents.beforeVariants { variantBuilder ->
+                variantBuilder.productFlavors
+                    .toMap()
+                    .forEach { (_, value) ->
+                        commonExtension.addGeneratedFilesToSourceSet(project, value)
+                    }
                 variantBuilder.flavorName
                     ?.takeIf { it.isNotEmpty() }
                     ?.let { commonExtension.addGeneratedFilesToSourceSet(project, it) }
                     ?: run {
-                        project.logger.info("No flavors available. Adding main...")
+                        project.logger.info("No flavors available. Adding main, debug, and release...")
                         commonExtension.addGeneratedFilesToSourceSet(project, "main")
+                        commonExtension.addGeneratedFilesToSourceSet(project, "debug")
+                        commonExtension.addGeneratedFilesToSourceSet(project, "release")
                     }
             }
             androidComponents.onVariants { variant ->
@@ -89,7 +96,7 @@ class LocatorPlugin: Plugin<Project> {
                 )
                 project.beforeEvaluate {
                     sourceSetLocales.forEach { (sourceSetName, locales) ->
-                        commonExtension.addResourceConfigurations(sourceSetName, locales)
+                        commonExtension.addResourceConfigurations(project, sourceSetName, locales)
                     }
                 }
                 project.afterEvaluate {
@@ -112,7 +119,7 @@ class LocatorPlugin: Plugin<Project> {
     ) {
         sourceSets {
             val baseDir = baseDirForVariantName(project, sourceSetName)
-            project.logger.debug("Adding generated files ($baseDir) for $sourceSetName.")
+            project.logger.info("Adding generated files ($baseDir) for $sourceSetName.")
             findByName(sourceSetName)?.let {
                 it.res.srcDir(File(baseDir, "src"))
                 it.java.srcDir(File(baseDir, "java"))
@@ -129,12 +136,14 @@ class LocatorPlugin: Plugin<Project> {
     }
 
     private fun CommonExtension<*, *, *, *>.addResourceConfigurations(
+        project: Project,
         flavorName: String,
         locales: Collection<String>,
     ) {
         productFlavors {
             findByName(flavorName)
                 ?.resourceConfigurations
+                ?.also { project.logger.info("Adding ${it.size} locales for $flavorName") }
                 ?.addAll(locales)
                 ?: System.err.println("Could not find flavor named \"$flavorName\"")
         }
