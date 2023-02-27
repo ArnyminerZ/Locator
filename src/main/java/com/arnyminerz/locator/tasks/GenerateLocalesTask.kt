@@ -1,7 +1,6 @@
 package com.arnyminerz.locator.tasks
 
 import com.arnyminerz.locator.LocatorPlugin
-import com.arnyminerz.locator.codegen.SourceSetQualifier
 import groovy.util.IndentPrinter
 import groovy.xml.MarkupBuilder
 import org.gradle.api.DefaultTask
@@ -27,7 +26,7 @@ abstract class GenerateLocalesTask : DefaultTask() {
          * @param lang The qualifier to convert. Example: `en`, `zh-rTW`...
          * @return A correct language code to be introduced into [java.util.Locale.forLanguageTag].
          */
-        fun resourceQualifierToLanguageTag(lang: String): String {
+        private fun resourceQualifierToLanguageTag(lang: String): String {
             // If the language qualifier is correct, return it
             if (!lang.matches(langRegex)) return lang
             // Otherwise, fix it
@@ -36,15 +35,15 @@ abstract class GenerateLocalesTask : DefaultTask() {
             return lang.substring(0, hyphenIndex) + "-" + lang.substring(hyphenIndex + 2)
         }
 
-        private fun getLocalesForFlavor(flavorDir: File): Set<String>? {
+        private fun Project.getLocalesForFlavor(flavorDir: File): Set<String>? {
             if (!flavorDir.exists()) {
-                println("Tried to get locales for non-existing flavor. Directory: $flavorDir")
+                logger.debug("Tried to get locales for non-existing flavor. Directory: $flavorDir")
                 return null
             }
 
             val locales = linkedSetOf("en")
 
-            println("Getting locales values directories from $flavorDir")
+            logger.debug("Getting locales values directories from $flavorDir")
             flavorDir.listFiles(FileFilter {
                 it.isDirectory && it.name.startsWith("values-") && File(it, "strings.xml").exists()
             })?.forEach { directory ->
@@ -54,16 +53,16 @@ abstract class GenerateLocalesTask : DefaultTask() {
                 locales.add(fixedLangCode)
             }
 
-            println("Supported locales: ${locales.joinToString(", ")}")
+            logger.info("Supported locales: ${locales.joinToString(", ")}")
 
             return locales
         }
 
-        fun getLocales(name: String, dir: File): Set<String> {
-            println("Getting locales for $name ($dir)")
+        fun Project.getLocales(name: String, dir: File): Set<String> {
+            logger.debug("Getting locales for $name ($dir)")
             val locales = getLocalesForFlavor(dir)
 
-            println("Locales found for ${name}: $locales")
+            logger.debug("Locales found for ${name}: $locales")
             return locales ?: emptySet()
         }
     }
@@ -77,11 +76,11 @@ abstract class GenerateLocalesTask : DefaultTask() {
     )
 
     private fun generateLocalesConfig(locales: Set<String>, srcDir: File) {
-        println("Creating locales output dir...")
+        logger.debug("Creating locales output dir...")
         val outputDir = File(srcDir, "xml")
         outputDir.mkdirs()
 
-        println("Generating locales_config.xml ($outputDir) for ${locales.size} locales...")
+        logger.debug("Generating locales_config.xml ($outputDir) for ${locales.size} locales...")
         File(outputDir, "locales_config.xml").writer().use { writer ->
             val xml = MarkupBuilder(IndentPrinter(writer, "    ", true, true))
             xml.mkp.apply {
@@ -100,7 +99,7 @@ abstract class GenerateLocalesTask : DefaultTask() {
     }
 
     private fun generateLocalesObject(locales: Set<String>, kotlinDir: File) {
-        println("Creating locales kotlin dir...")
+        logger.debug("Creating locales kotlin dir...")
         val sourceSetDir = File(kotlinDir, input.packageName.replace('.', '/'))
         sourceSetDir.mkdirs()
 
@@ -133,7 +132,7 @@ abstract class GenerateLocalesTask : DefaultTask() {
     @TaskAction
     fun runTask() {
         input.sourceSetLocales.forEach { (sourceSetName, locales) ->
-            println("Locales: $locales")
+            logger.debug("Locales: $locales")
             generateLocalesConfig(
                 locales,
                 File(

@@ -23,13 +23,13 @@ class LocatorPlugin: Plugin<Project> {
     override fun apply(project: Project) {
         val androidComponents = project.extensions.getByType(AndroidComponentsExtension::class.java)
         androidComponents.finalizeDsl { commonExtension ->
-            println("Finalizing DSL...")
+            project.logger.debug("Finalizing DSL...")
             androidComponents.beforeVariants { variantBuilder ->
                 variantBuilder.flavorName
                     ?.takeIf { it.isNotEmpty() }
                     ?.let { commonExtension.addGeneratedFilesToSourceSet(project, it) }
                     ?: run {
-                        println("No flavors available. Adding main...")
+                        project.logger.info("No flavors available. Adding main...")
                         commonExtension.addGeneratedFilesToSourceSet(project, "main")
                     }
             }
@@ -66,8 +66,8 @@ class LocatorPlugin: Plugin<Project> {
 
                 val sourceSetLocales = sourceSetMap
                     .mapValues {  (name, files) ->
-                        println("Getting locales for ${name}...")
-                        files.map { getLocales(name, it) }.flatten().toSet()
+                        project.logger.debug("Getting locales for ${name}...")
+                        files.map { project.getLocales(name, it) }.flatten().toSet()
                     }
 
                 project.tasks.register(
@@ -111,11 +111,11 @@ class LocatorPlugin: Plugin<Project> {
     ) {
         sourceSets {
             val baseDir = baseDirForVariantName(project, sourceSetName)
-            println("Adding generated files ($baseDir) for $sourceSetName.")
+            project.logger.debug("Adding generated files ($baseDir) for $sourceSetName.")
             findByName(sourceSetName)?.let {
                 it.res.srcDir(File(baseDir, "src"))
                 it.java.srcDir(File(baseDir, "java"))
-            } ?: System.err.println("Could not find a source set named $sourceSetName")
+            } ?: project.logger.error("Could not find a source set named $sourceSetName")
         }
     }
 
@@ -134,7 +134,7 @@ class LocatorPlugin: Plugin<Project> {
             findByName(flavorName)
                 ?.resourceConfigurations
                 ?.addAll(locales)
-                ?: println("Could not find flavor named \"$flavorName\"")
+                ?: System.err.println("Could not find flavor named \"$flavorName\"")
         }
     }
 }
