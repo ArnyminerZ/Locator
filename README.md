@@ -2,6 +2,8 @@
 
 An Android Gradle plugin for automating the new localization features introduced together with Android 13.
 
+[![Version badge](https://img.shields.io/gradle-plugin-portal/v/com.arnyminerz.locator?style=for-the-badge)](https://plugins.gradle.org/plugin/com.arnyminerz.locator)
+
 **Note: App Compat `1.6.0-beta01` or higher is required. See [here](https://developer.android.com/guide/topics/resources/app-languages#androidx-impl) for more information.**
 
 ## What this library does
